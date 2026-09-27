@@ -1,18 +1,23 @@
 'use strict';
-const filterRow = document.querySelector('.filter-row');
-const filters = [...document.querySelectorAll('[data-filter]')];
-const projects = [...document.querySelectorAll('.project')];
-const count = document.querySelector('#project-count');
-filterRow.hidden = false;
-filters.forEach(button => {
-  button.addEventListener('click', () => {
-    const category = button.dataset.filter;
-    filters.forEach(filter => filter.setAttribute('aria-pressed', String(filter === button)));
-    let visible = 0;
-    projects.forEach(project => {
-      project.hidden = category !== 'all' && project.dataset.category !== category;
-      if (!project.hidden) visible++;
+// Content remains visible without JavaScript or when reduced motion is enabled.
+const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+if ('IntersectionObserver' in window && !reducedMotion.matches) {
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.remove('pending');
+        observer.unobserve(entry.target);
+      }
     });
-    count.textContent = `${visible} ${visible === 1 ? 'project' : 'projects'}`;
+  }, { threshold: 0.08 });
+  document.querySelectorAll('.project, .section-heading, .about-intro, .about-facts').forEach(element => {
+    element.classList.add('reveal', 'pending');
+    observer.observe(element);
   });
-});
+  reducedMotion.addEventListener('change', () => {
+    if (reducedMotion.matches) {
+      observer.disconnect();
+      document.querySelectorAll('.pending').forEach(element => element.classList.remove('pending'));
+    }
+  });
+}
